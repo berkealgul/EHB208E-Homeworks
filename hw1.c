@@ -5,11 +5,9 @@
 #include "stdio.h"
 #include "string.h"
 
-
-
 typedef struct Matrix_Node {
-    Matrix_Node* pNext_column;
-    Matrix_Node* pNext_row;
+    struct Matrix_Node* pNext_column;
+    struct Matrix_Node* pNext_row;
     int nData;
 } Matrix_Node;
 
@@ -27,6 +25,7 @@ int main()
 
     if(!matrix) { return 1; } // terminate the program if matrix is null pointer
 
+    printf("cyka");
 
     return 0;
 }
