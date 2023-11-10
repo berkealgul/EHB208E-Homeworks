@@ -38,16 +38,21 @@ int main()
 
 void print_matrix_to_txt(const char* pszOutputFilePath, const Matrix* pM)
 {
-    Matrix_Node* pHead = pM->pHead_node;
-
-    while(pHead)
+    Matrix_Node* pHeadRow = pM->pHead_node;
+    while(pHeadRow) // iterate rows
     {
-        printf("%d ", pHead->nData);
-
-        if(pHead->pNext_column)
+        Matrix_Node* pHead = pHeadRow;
+        while(pHead) // iterate columns
         {
-        
+            printf("%d ", pHead->nData);
+            
+            if(pHead->pNext_column)
+            {
+                pHead = pHead->pNext_column;
+            }
+
         }
+        pHeadRow = pHeadRow->pNext_row;
     }
 }
 
