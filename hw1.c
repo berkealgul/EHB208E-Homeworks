@@ -118,7 +118,7 @@ Matrix* matrix_from_csv(const char *pszInputFilePath)
     if(!pFile)
     {
         printf("Couldn't read input file. Terminating!");
-        return NULL;
+        exit(1);
     }
 
     char row[100000]; //row with predefined maximum char size for row of csv file
