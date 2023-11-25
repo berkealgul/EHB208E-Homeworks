@@ -166,7 +166,7 @@ Matrix* insert_data_to_matrix(Matrix* pM, int nData, bool bNewRow)
 
     //Iterate to last row
     Matrix_Node* pHead = pM->pHead_node;
-    Matrix_Node* pPrev_head;
+    Matrix_Node* pPrev_head = NULL;
     while(pHead->pNext_row != NULL)
     {
         pPrev_head = pHead;
