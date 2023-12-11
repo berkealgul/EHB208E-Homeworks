@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 // nodes of student linked list
 typedef struct StudentNode {
@@ -47,7 +48,7 @@ Stack* init_stack();
 
 // main functions
 Stack* read_students_from_txt(const char*);
-Stack* sort_stack_by_names(Stack*);
+Stack* sort_stack(Stack*, bool(*)(const Student*, const Student*));
 
 // helper functions
 Student* create_student(const char*);
@@ -56,15 +57,108 @@ StackNode* new_stack_node(Student*);
 
 // student compare functions
 // returns if a < b
-bool cmp_std_year(const Student* a, const Student* b); // compares by birth year
-bool cmp_std_code(const Student* a, const Student* b); // compares by faculty code
+bool cmp_std_year(const Student* a, const Student* b); // compares by student birth year
+bool cmp_std_code(const Student* a, const Student* b); // compares by student faculty code
+
+// debug functions
+void print_stack(Stack*);
+void print_student(Student*);
 
 int main()
 {
+    // STAGE 1 - read txt and create stack
     Stack* student_stack = read_students_from_txt("input.txt");
+    FILE *pFile = fopen("output.txt", "w"); // open output file
+
+    // STAGE 2 - sort stack by birth year and print it to output.txt
     student_stack = sort_stack(student_stack, &cmp_std_year); // sort stack by year
-    //student_stack = sort_stack(student_stack, &cmp_std_code); // sort stack by faculty code
+    //print_stack(student_stack); // for debugging
+
+    // print stack sorted by birth year
+    fprintf(pFile, "Student names in ascending order by birthday:\n");
+    StackNode* stack_node = student_stack->top;
+    while(stack_node != NULL)
+    {
+        // print student 
+        StudentNode* student_node = stack_node->student->name_start->next; // get students first char of name
+        while(student_node != NULL) // iterate until the end
+        {
+            fprintf(pFile, "%c", student_node->data);
+            student_node = student_node->next;
+        }
+        fprintf(pFile, "\n");
+        stack_node = stack_node->next; // move on to next stack node
+    }
+
+    // STAGE 3 - sort stack by faculty code and print it to output.txt
+    student_stack = sort_stack(student_stack, &cmp_std_code); // sort stack by faculty code
+    //print_stack(student_stack); // for debugging
+
+    fprintf(pFile, "School numbers by the faculty codes in ascending order:\n");
+    stack_node = student_stack->top;
+    while(stack_node != NULL)
+    {
+        // print student 
+        StudentNode* student_node = stack_node->student->head; 
+        // since we print only school numbers, we only need to iterate until we hit name_start
+        while(student_node != stack_node->student->name_start) 
+        {
+            fprintf(pFile, "%c", student_node->data);
+            student_node = student_node->next;
+        }
+        fprintf(pFile, "\n");
+        stack_node = stack_node->next; // move on to next stack node
+    }
+
+    fclose(pFile);
     return 0;
+}
+
+bool cmp_std_year(const Student* a, const Student* b)
+{
+    StudentNode* a_n = a->year_start->next;
+    StudentNode* b_n = b->year_start->next;
+
+    while(a_n != NULL && b_n != NULL)
+    {
+        if(a_n->data < b_n->data) // if a < b then return true
+            return true;
+        else if(a_n->data == b_n->data) // if a == b then iterate for next node
+        {
+            a_n = a_n->next;
+            b_n = b_n->next;
+        }
+        else // if a > b return false
+            return false;
+    }
+
+    return false; // a == b or at least one node is null, return false
+}
+
+bool cmp_std_code(const Student* a, const Student* b)
+{
+    StudentNode* a_n = a->head;
+    StudentNode* b_n = b->head;
+    // faculty code is only first 3 digit of school number
+    // therefor we only have to check first 3 digits
+    const int code_len = 3; 
+    int n = 0;
+
+    while(a_n != NULL && b_n != NULL && n < code_len)
+    {
+        if(a_n->data < b_n->data) // if a < b then return true
+            return true;
+        else if(a_n->data == b_n->data) // if a == b then iterate for next node
+        {
+            a_n = a_n->next;
+            b_n = b_n->next;
+            n++;
+        }
+        else // if a > b return false
+            return false;
+    }
+
+    return false; // a == b or at least one node is null, return false
 }
 
 // delete top element of stack
@@ -91,14 +185,16 @@ Stack* sort_stack(Stack* stack, bool (*cmp_func)(const Student*, const Student*)
 
     while(!empty(stack))
     {
-        Student* tmp = pop(stack);
-        
+        Student* tmp = pop(stack);  // get top from input stack
+
+        // since we want smallest on top
+        // pop from sorted stack until tmp is not bigger than top(sorted_stack)
         while(!empty(sorted_stack) && cmp_func(top(sorted_stack), tmp))
         {
-            push(stack, pop(sorted_stack));
+            push(stack, pop(sorted_stack)); // repush popped elements to input stack
         }
-        
-        push(sorted_stack, tmp);
+
+        push(sorted_stack, tmp); // when sorted stack top is bigger than tmp we push it on top
     }
 
     return sorted_stack;
@@ -142,11 +238,10 @@ Stack* read_students_from_txt(const char* inputFilePath)
     }
 
     Stack* stack = init_stack();
-    char line[100000]; // char array for storing a single line
-
     // read each line of the input file
     while (!feof(pFile))
     {
+        char line[100000]; // char array for storing a single line
         fgets(line, 100000, pFile); // read line
         push(stack, create_student(line)); // push stack a new student
     }
@@ -168,8 +263,8 @@ Student* create_student(const char* student_line)
     int i = 1;
     char c = student_line[1];
 
-    // start iterate line
-    while(c != '\n')
+    // start iterate line until we hit null or new line
+    while(c != '\n' && c != '\0')
     {
         current->next = new_student_node(c);
         current = current->next;
@@ -182,7 +277,7 @@ Student* create_student(const char* student_line)
             {
                 student->name_start = current;
             }
-            // second is year
+            else // second is year
             {
                 student->year_start = current;
             }
@@ -212,4 +307,28 @@ StackNode* new_stack_node(Student* student)
     node->next = NULL;
     node->student = student;
     return node;
+}
+
+void print_stack(Stack* stack)
+{
+    printf("Stack ----\n");
+    StackNode* node = stack->top;
+    while(node != NULL)
+    {
+        print_student(node->student);
+        node = node->next;
+    }
+    printf("----------\n");
+}
+
+void print_student(Student* student)
+{
+    printf("S -> ");
+    StudentNode* node = student->head;
+    while(node != NULL)
+    {
+        printf("%c", node->data);
+        node = node->next;
+    }
+    printf("\n");
 }
