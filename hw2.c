@@ -14,7 +14,7 @@ typedef struct StudentNode {
 } StudentNode;
 
 /*
-Linked list to contains a single student
+Linked list that contains a single student
 what pointers point to:
               name_start    year_start
                   |             |
